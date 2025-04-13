@@ -1,19 +1,13 @@
-from streamlit import (
-    image, file_uploader, columns, sidebar,
-    set_page_config, title, write, success,
-    warning, info, error,spinner
-)
+import streamlit as st
 import os
 from streamlit_option_menu import option_menu
 import pandas as pd
-import streamlit as st
-import time
 import plotly.express as px
 from sklearn.cluster import KMeans
 import csv
 from datetime import datetime
 
-set_page_config(
+st.set_page_config(
     page_title="Customer Segmentation and Insights",
     page_icon="📊",
     initial_sidebar_state="expanded"
