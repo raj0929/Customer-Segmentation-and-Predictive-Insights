@@ -1,6 +1,6 @@
 streamlit
+streamlit-option-menu
 pandas
 plotly
 scikit-learn
-streamlit-option-menu
 passlib
