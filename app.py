@@ -38,7 +38,7 @@ def hash_password(Password):
 def authenticate(reg_email, Password):
     try:
         users_df = pd.read_csv(user_data_file)
-        hashed_input_password = hash_password(password)
+        hashed_input_password = hash_password(Password)
 
         # Match username and hashed password
         user = users_df[
