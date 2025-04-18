@@ -6,6 +6,9 @@ import plotly.express as px
 from sklearn.cluster import KMeans
 import csv
 from datetime import datetime
+import hashlib
+import re
+
 
 st.set_page_config(
     page_title="Customer Segmentation and Insights",
@@ -28,6 +31,37 @@ if not os.path.exists(user_data_file):
     df.to_csv(user_data_file,index=False)
 else:
     df = pd.read_csv(user_data_file,dtype={'Email':str,'Password':str})
+
+def hash_password(Password):
+    return hashlib.sha256(Password.encode()).hexdigest()
+
+def authenticate(reg_email, Password):
+    try:
+        users_df = pd.read_csv(user_data_file)
+        hashed_input_password = hash_password(password)
+
+        # Match username and hashed password
+        user = users_df[
+            (users_df["Email"] == reg_email) &
+            (users_df["Password"] == hashed_input_password)
+        ]
+
+        return not user.empty
+    except FileNotFoundError:
+        return False
+
+def is_valid_password(Password):
+    if len(Password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", Password):
+        return False, "Password must include at least one uppercase letter."
+    if not re.search(r"[a-z]", Password):
+        return False, "Password must include at least one lowercase letter."
+    if not re.search(r"[0-9]", Password):
+        return False, "Password must include at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", Password):
+        return False, "Password must include at least one special character."
+    return True, ""
 
 df['Email'] =df['Email'].astype(str).str.strip()
 df['Password'] =df['Password'].astype(str).str.strip()
@@ -53,45 +87,59 @@ with st.sidebar:
             default_index=0,
         )
     else:
-        selected =option_menu("Admin Panel",['Register','Login'],
+        selected = option_menu("Admin Panel",['Register','Login'],
                               menu_icon=['house'],icons=['lock','lock'],
                               default_index=0)
 
 if selected == 'Register':
     st.header("Register Now")
     reg_email =st.text_input("Enter Username : ").strip()
-    reg_password = st.text_input("Enter Password : ",type="password").strip()
+    Password = st.text_input("Enter Password : ",type="password").strip()
     reg_button = st.button("Register")
 
     if reg_button:
-        if reg_email and reg_password:
-            if reg_email in df['Email'].values:
-                st.error("User Already Exists, Please Login!")
-            else:
-                new_entry = pd.DataFrame({"Email":[reg_email],'Password':[reg_password]})
-                df = pd.concat([df,new_entry],ignore_index=True)
-                df.to_csv(user_data_file,index=False)
-                st.success("Registration Successful, You can now Log In.")
-
+        if not reg_email or not Password:
+            st.warning("Please fill in all fields.")
         else:
-            st.error("Please Enter Both Username and Password.")
+            # Validate password
+            valid, message = is_valid_password(Password)
+            if not valid:
+                st.error(message)
+            else:
+                # Load current users
+                users_df = pd.read_csv(user_data_file)
+
+                # Check if user already exists
+                if reg_email in users_df["Email"].values:
+                    st.error("Username already exists.")
+                else:
+                    # Save user
+                    new_user = pd.DataFrame([{
+                        "Email": reg_email,
+                        "Password": hash_password(Password)
+                    }])
+                    users_df = pd.concat([users_df, new_user], ignore_index=True)
+                    users_df.to_csv(user_data_file, index=False)
+                    st.success("Registration successful! You can now log in.")
 
 if selected == 'Login':
     st.header("Login Now")
-    email = st.text_input("Enter Username :").strip()
-    password = st.text_input("Enter Password : ",type="password").strip()
+    username = st.text_input("Username").strip()
+    password = st.text_input("Password", type="password").strip()
     login_button = st.button("Login")
 
     if login_button:
-        email =str(email).strip()
-        password = str(password).strip()
+        # email =str(username).strip()
+        # password = str(password).strip()
 
-        user =df[(df['Email'] == email) & (df['Password'] == password)]
-        if not user.empty:
+        # user =df[(df['Email'] == email) & (df['Password'] == password)]
+        # if not user.empty:
+        if authenticate(username, password):
+            st.success(f"Welcome {username}!")
             st.session_state.authenticated = True
-            st.session_state.user_id = email
-            st.query_params.update(auth='true',user=email)
-            st.success("Login Successful")
+            st.session_state.user_id = username
+            st.query_params.update(auth='true',user=username)
+            # st.success("Login Successful")
             st.rerun()
         else:
             st.error("Invalid Email or Password.")
@@ -463,3 +511,4 @@ if selected == 'Logout':
     st.success("Logout Successfully")
     st.rerun()
 
+# https://customer-segmentation-and-predictive-insights.streamlit.app/
