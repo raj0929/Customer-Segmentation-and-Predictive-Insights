@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-user_data_file = 'users.csv'
+user_data_file = 'https://raw.githubusercontent.com/raj0929/Customer-Segmentation-and-Predictive-Insights/refs/heads/main/users.csv'
 
 url1 = "https://raw.githubusercontent.com/raj0929/Customer-Segmentation-and-Predictive-Insights/refs/heads/main/sales.csv"
 data1 = pd.read_csv(url1)
